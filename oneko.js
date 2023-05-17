@@ -2,8 +2,8 @@
 
 (function oneko() {
   const nekoEl = document.createElement("div");
-  let nekoPosX = 32;
-  let nekoPosY = 32;
+  let nekoPosX = window.innerWidth/3*4;
+  let nekoPosY = window.innerHeight/2;
   let mousePosX = 0;
   let mousePosY = 0;
   let frameCount = 0;
