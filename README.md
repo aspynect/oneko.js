@@ -1,3 +1,3 @@
 # oneko.js
 
-A hacky script I wrote to put a cat on my site.
+a quick edit of oneko.js, resprite done by [Kai](https://twitter.com/draconikai)
