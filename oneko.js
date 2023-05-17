@@ -2,10 +2,10 @@
 
 (function oneko() {
   const nekoEl = document.createElement("div");
-  let nekoPosX = window.innerWidth/3*4;
+  let nekoPosX = window.innerWidth/4*3;
   let nekoPosY = window.innerHeight/2;
-  let mousePosX = 0;
-  let mousePosY = 0;
+  let mousePosX = window.innerWidth/4*3;
+  let mousePosY = window.innerHeight/2;
   let frameCount = 0;
   let idleTime = 0;
   let idleAnimation = null;
