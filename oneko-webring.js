@@ -1,21 +1,26 @@
-// oneko.js: https://github.com/adryd325/oneko.js
+// oneko.js: https://github.com/adryd325/oneko.js (webring variant)
 
 (function oneko() {
+  const isReducedMotion =
+    window.matchMedia(`(prefers-reduced-motion: reduce)`) === true ||
+    window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
+
+  if (isReducedMotion) return;
+
   const nekoEl = document.createElement("div");
-  // Hardcoded for privacy reasons.
-  const nekoSites = [
-    "adryd.com",
-    "localhost",
-    "c7.pm",
-    "fade.nya.rest",
-    "fleepy.tv",
-    "maia.crimew.gay",
-  ];
+
   let nekoPosX = 32;
   let nekoPosY = 32;
+
   let mousePosX = 0;
   let mousePosY = 0;
 
+  // please use data-neko="true" on your A elements that link to another site with oneko-webring.js instead of this
+  // this is deprecated and will eventually be removed
+  const nekoSites = [
+    "localhost",
+  ];
+  
   try {
     const searchParams = location.search
       .replace("?", "")
@@ -35,10 +40,44 @@
     console.error(e);
   }
 
+  function onClick(event) {
+    let target;
+    if (event.target.tagName === "A" && event.target.getAttribute("href")) {
+      target = event.target;
+    } else if (
+      event.target.tagName == "IMG" &&
+      event.target.parentElement.tagName === "A" &&
+      event.target.parentElement.getAttribute("href")
+    ) {
+      target = event.target.parentElement;
+    } else {
+      return;
+    }
+    let newLocation;
+    try {
+      newLocation = new URL(target.href);
+    } catch (e) {
+      return;
+    }
+    if (
+      (nekoSites.includes(newLocation.host) && newLocation.pathname == "/") ||
+      target.dataset.neko
+    ) {
+      newLocation.searchParams.append("catx", Math.floor(nekoPosX));
+      newLocation.searchParams.append("caty", Math.floor(nekoPosY));
+      newLocation.searchParams.append("catdx", Math.floor(mousePosX));
+      newLocation.searchParams.append("catdy", Math.floor(mousePosY));
+      event.preventDefault();
+      window.location.href = newLocation.toString();
+    }
+  }
+  document.addEventListener("click", onClick);
+
   let frameCount = 0;
   let idleTime = 0;
   let idleAnimation = null;
   let idleAnimationFrame = 0;
+
   const nekoSpeed = 10;
   const spriteSets = {
     idle: [[-3, -3]],
@@ -103,56 +142,51 @@
     ],
   };
 
-  function create() {
+  function init() {
     nekoEl.id = "oneko";
+    nekoEl.ariaHidden = true;
     nekoEl.style.width = "32px";
     nekoEl.style.height = "32px";
     nekoEl.style.position = "fixed";
     nekoEl.style.pointerEvents = "none";
-    nekoEl.style.backgroundImage = "url('./oneko.gif')";
     nekoEl.style.imageRendering = "pixelated";
     nekoEl.style.left = `${nekoPosX - 16}px`;
     nekoEl.style.top = `${nekoPosY - 16}px`;
-    nekoEl.style.zIndex = "999";
+    nekoEl.style.zIndex = Number.MAX_VALUE;
+
+    let nekoFile = "./oneko.gif"
+    const curScript = document.currentScript
+    if (curScript && curScript.dataset.cat) {
+      nekoFile = curScript.dataset.cat
+    }
+    nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
     document.body.appendChild(nekoEl);
 
-    document.onmousemove = (event) => {
+    document.addEventListener("mousemove", function (event) {
       mousePosX = event.clientX;
       mousePosY = event.clientY;
-    };
+    });
 
-    window.onekoInterval = setInterval(frame, 100);
+    window.requestAnimationFrame(onAnimationFrame);
   }
 
-  function onClick(event) {
-    let target;
-    if (event.target.tagName === "A" && event.target.getAttribute("href")) {
-      target = event.target;
-    } else if (
-      event.target.tagName == "IMG" &&
-      event.target.parentElement.tagName === "A" &&
-      event.target.parentElement.getAttribute("href")
-    ) {
-      target = event.target.parentElement;
-    } else {
+  let lastFrameTimestamp;
+
+  function onAnimationFrame(timestamp) {
+    // Stops execution if the neko element is removed from DOM
+    if (!nekoEl.isConnected) {
       return;
     }
-    let newLocation;
-    try {
-      newLocation = new URL(target.href);
-    } catch (e) {
-      // console.error(e);
-      return;
+    if (!lastFrameTimestamp) {
+      lastFrameTimestamp = timestamp;
     }
-    if (!nekoSites.includes(newLocation.host) || newLocation.pathname != "/")
-      return;
-    newLocation.searchParams.append("catx", Math.floor(nekoPosX));
-    newLocation.searchParams.append("caty", Math.floor(nekoPosY));
-    newLocation.searchParams.append("catdx", Math.floor(mousePosX));
-    newLocation.searchParams.append("catdy", Math.floor(mousePosY));
-    event.preventDefault();
-    window.location.href = newLocation.toString();
+    if (timestamp - lastFrameTimestamp > 100) {
+      lastFrameTimestamp = timestamp
+      frame()
+    }
+
+    window.requestAnimationFrame(onAnimationFrame);
   }
 
   function setSprite(name, frame) {
@@ -214,7 +248,6 @@
           resetIdleAnimation();
         }
         break;
-
       default:
         setSprite("idle", 0);
         return;
@@ -244,6 +277,7 @@
       return;
     }
 
+    let direction;
     direction = diffY / distance > 0.5 ? "N" : "";
     direction += diffY / distance < -0.5 ? "S" : "";
     direction += diffX / distance > 0.5 ? "W" : "";
@@ -260,6 +294,5 @@
     nekoEl.style.top = `${nekoPosY - 16}px`;
   }
 
-  create();
-  document.addEventListener("click", onClick);
+  init();
 })();
